@@ -169,3 +169,19 @@ If you find a standards-compliant identity provider that doesn't work, please su
 ## License
 
 Apache License 2.0 - see [LICENSE](LICENSE) for details.
+
+### Per-SP response canonicalization
+
+`idp.SPConfig.SignatureCanonicalizer` overrides the IdP-wide canonicalizer for
+Response and Assertion signatures, including signed error Responses. Leaving it
+nil preserves `IdentityProvider.SignatureCanonicalizer`; if both are nil, the
+existing Inclusive C14N 1.1 default applies. Logout signatures are unchanged.
+Configure SP settings before use, or return a fresh configuration from the
+service provider resolver. Do not mutate configurations during signing.
+
+```go
+spConfig.SignatureCanonicalizer = saml2.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+```
+
+The IdP keeps its cached signer unchanged and applies each override to a local
+copy, so one IdP can issue responses concurrently for SPs with different methods.

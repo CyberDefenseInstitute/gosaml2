@@ -67,6 +67,11 @@ type ServiceProviderResolver interface {
 
 // SPConfig holds the configuration for a known Service Provider.
 type SPConfig struct {
+	// SignatureCanonicalizer overrides the IdP canonicalizer for SAML Response
+	// and Assertion signatures, including error Responses. A nil value inherits
+	// IdentityProvider.SignatureCanonicalizer and its default. Logout signatures
+	// are unaffected. Configure before use; do not mutate during requests.
+	SignatureCanonicalizer     saml2.Canonicalizer
 	EntityID                   string
 	ACSURLs                    []string
 	SLOURLs                    []string
@@ -153,9 +158,20 @@ func (idp *IdentityProvider) Signer() (*dsig.Signer, error) {
 }
 
 func (idp *IdentityProvider) signElement(el *xmltree.Element) (*xmltree.Element, error) {
+	return idp.signElementWithCanonicalizer(el, nil)
+}
+
+func (idp *IdentityProvider) signElementWithCanonicalizer(el *xmltree.Element, canonicalizer saml2.Canonicalizer) (*xmltree.Element, error) {
 	signer, err := idp.Signer()
 	if err != nil {
 		return nil, err
+	}
+
+	// Keep the cached signer immutable when applying an SP-specific override.
+	if canonicalizer != nil {
+		localSigner := *signer
+		localSigner.Canonicalizer = canonicalizer
+		signer = &localSigner
 	}
 
 	signed, err := signer.SignEnveloped(el)
