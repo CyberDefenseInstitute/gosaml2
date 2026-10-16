@@ -223,6 +223,13 @@ func (s *Signer) constructSignedInfo(el *xmltree.Element, enveloped bool) (*xmlt
 	}
 	canonicalizationAlgorithm := s.createNamespacedElement(transforms, transformTag)
 	canonicalizationAlgorithm.CreateAttr(algorithmAttr, string(s.canonicalizer().Algorithm()))
+	if c, ok := s.canonicalizer().(*c14N10ExclusiveCanonicalizer); ok && c.prefixList != "" {
+		for _, element := range []*xmltree.Element{canonicalizationMethod, canonicalizationAlgorithm} {
+			inclusiveNamespaces := element.CreateElement("ec:InclusiveNamespaces")
+			inclusiveNamespaces.CreateAttr("xmlns:ec", CanonicalXML10ExclusiveAlgorithmId.String())
+			inclusiveNamespaces.CreateAttr("PrefixList", c.prefixList)
+		}
+	}
 
 	// /SignedInfo/Reference/DigestMethod
 	digestMethod := s.createNamespacedElement(reference, digestMethodTag)

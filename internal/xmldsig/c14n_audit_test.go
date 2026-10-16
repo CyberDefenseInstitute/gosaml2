@@ -1081,25 +1081,9 @@ func TestC14NAudit_ExcC14NMultiplePrefixList(t *testing.T) {
 // Tests the actual SAML use case where an IdP includes xs in the PrefixList
 // of the InclusiveNamespaces element.
 // ---------------------------------------------------------------------------
+// TestC14NAudit_SignVerifyWithPrefixList はPrefixListの出力を確認し、
+// 検証側の未対応による失敗と空PrefixListでの成功を確認する。
 func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
-	// FINDING: The Signer does NOT emit <InclusiveNamespaces PrefixList="xs"/>
-	// inside the Transform element when using exc-c14n with a non-empty PrefixList.
-	// It computes the digest using the PrefixList, but the signed Transform only
-	// records the algorithm URI. The verifier reads PrefixList="" from the
-	// Transform (because the child element is absent) and computes a different
-	// canonical form, producing a different digest.
-	//
-	// Impact: If a signer uses a non-empty PrefixList, the resulting signature
-	// CANNOT be verified by this library (or any spec-compliant verifier).
-	// This is a CORRECTNESS BUG in the Signer, not a security vulnerability
-	// per se — it fails safely (verification fails). However, it means this
-	// library cannot produce signatures that are interoperable with IdPs that
-	// expect PrefixList to be recorded in the signature.
-	//
-	// The library CAN verify signatures from external signers that do include
-	// InclusiveNamespaces (e.g. Okta), because the verifier reads PrefixList
-	// from the Transform element correctly.
-
 	key, cert := randomTestKeyAndCert()
 
 	signer := &Signer{
@@ -1118,7 +1102,7 @@ func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
 	require.NoError(t, err)
 	signed = reparse(t, signed)
 
-	// Verify that the Transform element does NOT contain InclusiveNamespaces
+	// Verify that the Transform element contains InclusiveNamespaces
 	transforms := signed.FindElement("./" + signatureTag + "/" + signedInfoTag + "/" + referenceTag + "/" + transformsTag)
 	require.NotNil(t, transforms)
 	var foundInclusiveNS bool
@@ -1129,15 +1113,11 @@ func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
 			}
 		}
 	}
-	assert.False(t, foundInclusiveNS,
-		"FINDING: Signer does not emit InclusiveNamespaces element in Transform")
+	assert.True(t, foundInclusiveNS)
 
-	// Verification will fail because the PrefixList is lost
 	v := &Verifier{TrustedCerts: []*x509.Certificate{cert}}
 	_, err = v.Verify(signed)
-	assert.Error(t, err,
-		"FINDING: Verification fails because Signer omits PrefixList from Transform")
-	t.Logf("FINDING: Sign with PrefixList='xs' fails verification: %v", err)
+	assert.Error(t, err, "Verifier does not support PrefixList in SignedInfo")
 
 	// Contrast: signing with empty PrefixList works fine
 	signerNoPrefix := &Signer{
