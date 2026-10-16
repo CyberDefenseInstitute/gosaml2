@@ -244,6 +244,7 @@ func (idp *IdentityProvider) buildAssertion(sp *SPConfig, params *AssertionParam
 			for _, val := range attr.Values {
 				valEl := attrEl.CreateElement("saml:AttributeValue")
 				valEl.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+				valEl.CreateAttr("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
 				if val.Type != "" {
 					valEl.CreateAttr("xsi:type", val.Type)
 				} else {
