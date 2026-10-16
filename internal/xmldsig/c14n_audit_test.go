@@ -1082,7 +1082,7 @@ func TestC14NAudit_ExcC14NMultiplePrefixList(t *testing.T) {
 // of the InclusiveNamespaces element.
 // ---------------------------------------------------------------------------
 // TestC14NAudit_SignVerifyWithPrefixList はPrefixListの出力を確認し、
-// 検証側の未対応による失敗と空PrefixListでの成功を確認する。
+// 指定あり・空の両方で再読込後の署名検証が成功することを確認する。
 func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
 	key, cert := randomTestKeyAndCert()
 
@@ -1117,7 +1117,7 @@ func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
 
 	v := &Verifier{TrustedCerts: []*x509.Certificate{cert}}
 	_, err = v.Verify(signed)
-	assert.Error(t, err, "Verifier does not support PrefixList in SignedInfo")
+	require.NoError(t, err)
 
 	// Contrast: signing with empty PrefixList works fine
 	signerNoPrefix := &Signer{

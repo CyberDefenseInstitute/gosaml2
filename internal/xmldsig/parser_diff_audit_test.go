@@ -827,7 +827,6 @@ func TestParserDiffExcC14NWithPrefixList(t *testing.T) {
 	})
 
 	t.Run("WithPrefixListB", func(t *testing.T) {
-		// Verifier does not support PrefixList in SignedInfo.
 		key, cert := randomTestKeyAndCert()
 		signer := &Signer{
 			Key:           key,
@@ -843,8 +842,7 @@ func TestParserDiffExcC14NWithPrefixList(t *testing.T) {
 
 		verifier := &Verifier{TrustedCerts: []*x509.Certificate{cert}}
 		_, err = verifier.Verify(signed)
-		assert.Error(t, err,
-			"expected failure: Verifier does not support PrefixList in SignedInfo")
+		require.NoError(t, err)
 	})
 }
 
