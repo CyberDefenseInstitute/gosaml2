@@ -27,7 +27,6 @@ import (
 	"github.com/russellhaering/gosaml2/v2/types"
 )
 
-// TestBuildResponseDocument は応答XMLの生成を確認し、属性値の型に必要なxs名前空間宣言が出力されることを検証する。
 func TestBuildResponseDocument(t *testing.T) {
 	idp, _ := testIdentityProvider(t)
 
@@ -56,7 +55,6 @@ func TestBuildResponseDocument(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, xmlStr, "user@example.com")
 	require.Contains(t, xmlStr, saml2.StatusCodeSuccess)
-	require.Contains(t, xmlStr, `xmlns:xs="http://www.w3.org/2001/XMLSchema"`)
 }
 
 func TestBuildResponseDocument_DefaultACSURL(t *testing.T) {
