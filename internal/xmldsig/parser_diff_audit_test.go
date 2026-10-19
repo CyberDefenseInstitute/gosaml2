@@ -827,12 +827,6 @@ func TestParserDiffExcC14NWithPrefixList(t *testing.T) {
 	})
 
 	t.Run("WithPrefixListB", func(t *testing.T) {
-		// NOTE: This correctly fails because the Signer computes the digest
-		// using PrefixList="b", but does NOT emit <InclusiveNamespaces PrefixList="b">
-		// into the Transform element in SignedInfo. The verifier therefore uses
-		// an empty PrefixList, producing a different canonical form → signature
-		// mismatch. This is a Signer limitation (not a parser differential),
-		// and in practice PrefixList is almost never used.
 		key, cert := randomTestKeyAndCert()
 		signer := &Signer{
 			Key:           key,
@@ -848,8 +842,7 @@ func TestParserDiffExcC14NWithPrefixList(t *testing.T) {
 
 		verifier := &Verifier{TrustedCerts: []*x509.Certificate{cert}}
 		_, err = verifier.Verify(signed)
-		assert.Error(t, err,
-			"expected failure: Signer does not emit InclusiveNamespaces PrefixList in Transform")
+		require.NoError(t, err)
 	})
 }
 

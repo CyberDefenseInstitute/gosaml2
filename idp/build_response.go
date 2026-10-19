@@ -76,7 +76,7 @@ func (idp *IdentityProvider) BuildResponseDocumentContext(ctx context.Context, s
 
 	if idp.SignAssertions {
 		assertionEl.CreateAttr("xmlns:samlp", saml2.SAMLProtocolNamespace)
-		assertionEl, err = idp.signElement(assertionEl)
+		assertionEl, err = idp.signElementWithCanonicalizer(assertionEl, sp.SignatureCanonicalizer)
 		if err != nil {
 			return nil, "", fmt.Errorf("error signing assertion: %w", err)
 		}
@@ -93,7 +93,7 @@ func (idp *IdentityProvider) BuildResponseDocumentContext(ctx context.Context, s
 	}
 
 	if idp.SignResponses {
-		responseEl, err = idp.signElement(responseEl)
+		responseEl, err = idp.signElementWithCanonicalizer(responseEl, sp.SignatureCanonicalizer)
 		if err != nil {
 			return nil, "", fmt.Errorf("error signing response: %w", err)
 		}
@@ -132,7 +132,8 @@ func (idp *IdentityProvider) BuildResponseBodyPostContext(ctx context.Context, s
 // status code (e.g. StatusCodeResponder). Use this to communicate authentication
 // failures back to the SP.
 func (idp *IdentityProvider) BuildErrorResponseDocument(spEntityID, statusCode, inResponseTo, destination string) (*xmltree.Document, error) {
-	if _, err := idp.lookupSP(spEntityID); err != nil {
+	sp, err := idp.lookupSP(spEntityID)
+	if err != nil {
 		return nil, err
 	}
 
@@ -147,8 +148,7 @@ func (idp *IdentityProvider) BuildErrorResponseDocument(spEntityID, statusCode, 
 	statusCodeEl.CreateAttr("Value", statusCode)
 
 	if idp.SignResponses {
-		var err error
-		responseEl, err = idp.signElement(responseEl)
+		responseEl, err = idp.signElementWithCanonicalizer(responseEl, sp.SignatureCanonicalizer)
 		if err != nil {
 			return nil, fmt.Errorf("error signing error response: %w", err)
 		}
@@ -244,6 +244,7 @@ func (idp *IdentityProvider) buildAssertion(sp *SPConfig, params *AssertionParam
 			for _, val := range attr.Values {
 				valEl := attrEl.CreateElement("saml:AttributeValue")
 				valEl.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+				valEl.CreateAttr("xmlns:xs", "http://www.w3.org/2001/XMLSchema")
 				if val.Type != "" {
 					valEl.CreateAttr("xsi:type", val.Type)
 				} else {

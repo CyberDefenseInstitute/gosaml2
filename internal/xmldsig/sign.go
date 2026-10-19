@@ -223,6 +223,11 @@ func (s *Signer) constructSignedInfo(el *xmltree.Element, enveloped bool) (*xmlt
 	}
 	canonicalizationAlgorithm := s.createNamespacedElement(transforms, transformTag)
 	canonicalizationAlgorithm.CreateAttr(algorithmAttr, string(s.canonicalizer().Algorithm()))
+	if c, ok := s.canonicalizer().(*c14N10ExclusiveCanonicalizer); ok && c.prefixList != "" {
+		inclusiveNamespaces := canonicalizationAlgorithm.CreateElement("ec:InclusiveNamespaces")
+		inclusiveNamespaces.CreateAttr("xmlns:ec", CanonicalXML10ExclusiveAlgorithmId.String())
+		inclusiveNamespaces.CreateAttr("PrefixList", c.prefixList)
+	}
 
 	// /SignedInfo/Reference/DigestMethod
 	digestMethod := s.createNamespacedElement(reference, digestMethodTag)
@@ -275,7 +280,13 @@ func (s *Signer) constructSignature(el *xmltree.Element, enveloped bool) (*xmltr
 		return nil, err
 	}
 
-	digest, err := s.digest(detachedSignedInfo)
+	signedInfoSigner := *s
+	if c, ok := s.canonicalizer().(*c14N10ExclusiveCanonicalizer); ok {
+		canonicalizer := *c
+		canonicalizer.prefixList = ""
+		signedInfoSigner.Canonicalizer = &canonicalizer
+	}
+	digest, err := signedInfoSigner.digest(detachedSignedInfo)
 	if err != nil {
 		return nil, err
 	}
