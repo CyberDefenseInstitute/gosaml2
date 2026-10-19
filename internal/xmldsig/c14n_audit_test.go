@@ -1081,8 +1081,8 @@ func TestC14NAudit_ExcC14NMultiplePrefixList(t *testing.T) {
 // Tests the actual SAML use case where an IdP includes xs in the PrefixList
 // of the InclusiveNamespaces element.
 // ---------------------------------------------------------------------------
-// TestC14NAudit_SignVerifyWithPrefixList はPrefixListの出力を確認し、
-// 指定あり・空の両方で再読込後の署名検証が成功することを確認する。
+// TestC14NAudit_SignVerifyWithPrefixList checks PrefixList output and verifies
+// signatures after reparsing with both non-empty and empty prefix lists.
 func TestC14NAudit_SignVerifyWithPrefixList(t *testing.T) {
 	key, cert := randomTestKeyAndCert()
 
